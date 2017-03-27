@@ -1,0 +1,51 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        maven {
+            url "https://cornea.msis.med.umich.edu/nexus/content/groups/public/"
+        }
+        jcenter()
+        maven {
+            credentials {
+                username nexusUsername
+                password nexusPassword
+            }
+            url "https://cornea.msis.med.umich.edu/nexus/content/repositories/snapshots/"
+        }
+    }
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+    dependencies {
+        classpath "org.liquibase:liquibase-gradle-plugin:$liquibaseVersion"
+        classpath group: 'com.h2database', name:'h2', version:"$h2Version"
+//        classpath group: 'edu.umich.med.michr.gradle', name: 'h2-liquibase-gradle-plugin',version: '1.0.0-SNAPSHOT'
+        classpath files('../build/libs/h2-liquibase-gradle-plugin-1.0.0-SNAPSHOT.jar')
+    }
+}
+
+plugins {
+  id 'java'
+}
+
+apply plugin: 'edu.umich.med.michr.gradle.h2-liquibase-gradle-plugin'
+
+h2 {
+    tcpPort = 9092
+    webPort = 8082
+}
+
+liquibase {
+    activities {
+        main {
+            changeLogFile 'src/main/resources/liquibase/changelog/db.changelog-master.xml'
+            driver 'org.h2.Driver'
+            url 'jdbc:h2:mem:umcs;DB_CLOSE_DELAY=5;TRACE_LEVEL_FILE=1;MODE=Oracle'
+            username 'umcs'
+            password 'umcs'
+            contexts 'schema,schema_staging,seed_data,dev_data'
+            defaultSchemaName 'PUBLIC'
+            logLevel 'info'
+        }
+    }
+}

@@ -1,0 +1,156 @@
+plugins{
+	id 'groovy'
+	id 'java-gradle-plugin'
+	id 'maven'
+	id 'signing'
+}
+
+description ="""
+A plugin to start/stop h2 database created/populated by liquibase changesets as part of a build.
+Useful for running applications that need a relational database during development.
+"""
+group = 'edu.umich.med.michr.gradle'
+version = '1.0.0-SNAPSHOT'
+
+repositories {
+	mavenLocal()	
+    mavenCentral()
+}
+
+dependencies {
+	//we could not use compileOnly here because with gradle 3.4.1 the unit tests failed ofr both h2 and liquibase plugin
+    compile "org.liquibase:liquibase-gradle-plugin:$liquibaseVersion"
+    compile "com.h2database:h2:$h2Version" //we could not use compileOnly here because with gradle 3.4.1 the unit tests failed
+    testCompile 'junit:junit:4.12'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.4.1'
+}
+
+tasks.withType(Test) {
+    testLogging {
+        // set options for log level LIFECYCLE
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        showExceptions true
+        exceptionFormat "full"
+        showCauses true
+        showStackTraces true
+		showStandardStreams true
+
+        // set options for log level DEBUG and INFO
+        debug {
+            events "started", "passed", "skipped", "failed", "standardOut", "standardError"
+            exceptionFormat "full"
+        }
+        info.events = debug.events
+        info.exceptionFormat = debug.exceptionFormat
+
+        afterSuite { desc, result ->
+            if (!desc.parent) { // will match the outermost suite
+                def output = "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+                def startItem = '|  ', endItem = '  |'
+                def repeatLength = startItem.length() + output.length() + endItem.length()
+                println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+//PUBLISH RELATED CONFIG STARTS
+/*
+Make sure you have gpg public/private key pair on your machine and your public key distributed to a key server that community can access.
+see http://central.sonatype.org/pages/working-with-pgp-signatures.html as it pertains to using gnupg to publish to central maven repository.
+You also need to include the lines below in your gradle.properties file ($HOME/.gradle/gradle.properties)
+signing.keyId=MY_KEY_ID
+signing.password=MY_KEY_PASSWORD
+signing.secretKeyRingFile=<Path to gnupg secret key ring>/secring.gpg
+signing {
+    sign configurations.archives
+}
+*/
+uploadArchives {
+    repositories {
+        mavenDeployer{
+            repository(url: "https://cornea.msis.med.umich.edu/nexus/content/repositories/releases/") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+            snapshotRepository(url: "https://cornea.msis.med.umich.edu/nexus/content/repositories/snapshots/") {
+                authentication(userName: nexusUsername, password: nexusPassword)
+            }
+        }
+    }
+}
+
+//Because we had to specify h2 as compile dependency we need to tweak the pom file when uploading to repo to make it provided to let clients control h2 version.
+def installer = install.repositories.mavenInstaller
+def deployer = uploadArchives.repositories.mavenDeployer
+
+[installer, deployer]*.pom*.whenConfigured {pom ->
+    pom.dependencies.each {
+		if(it.artifactId == 'h2' ||  it.artifactId == 'liquibase-gradle-plugin'){
+			it.scope = 'provided'
+		}
+	}
+	pom.project {
+		artifactId project.name
+		groupId project.group
+		version project.version
+		name groupId+':'+artifactId
+		url 'https://github.com/michr-cri/h2-liquibase-gradle-plugin'
+		inceptionYear '2017'
+		licenses {
+			license {
+				name 'The MIT License'
+				url 'https://opensource.org/licenses/MIT'
+				distribution 'repo'
+			}
+		}
+		developers{
+			developer{
+				name = 'Melih Gunal'
+				email = 'gunalmel@umich.edu'
+				organization = 'Michigan Institute of Clinical and Health Research at the University of Michigan'
+				organizationUrl = 'https://www.michr.umich.edu/'
+			}
+			developer{
+				name = 'Tianyun Zhang'
+				email = 'tianyunz@umich.edu'
+				organization = 'Michigan Institute of Clinical and Health Research at the University of Michigan'
+				organizationUrl = 'https://www.michr.umich.edu/'
+			}
+		}
+		scm{
+			connection 'scm:git:git://github.com:michr-cri/h2-liquibase-gradle-plugin.git'
+			developerConnection 'scm:git:git://github.com:michr-cri/h2-liquibase-gradle-plugin.git'
+			url 'https://github.com/michr-cri/h2-liquibase-gradle-plugin'
+		}
+
+	}
+}
+
+task writeNewPom  {
+	doLast{
+		deployer.pom.writeTo("$buildDir/libs/${project.name}-${version}.pom")
+	}
+}
+
+build.doLast {
+	writeNewPom.execute()
+}
+//PUBLISH RELATED CONFIG ENDS
