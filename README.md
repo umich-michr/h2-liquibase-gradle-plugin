@@ -34,6 +34,7 @@ buildscript {
         classpath files('<The path to the plugin project after you checked out>/build/libs/h2-liquibase-plugin-1.0.0.jar')
     }
 }
+apply plugin: 'edu.umich.med.michr.gradle.h2-liquibase-gradle-plugin'
 ```
 ### h2 configuration'
 
