@@ -12,7 +12,7 @@ public class StartH2Task extends DefaultTask{
 	@TaskAction
 	void start(){
         LOGGER.debug("Starting h2 database at port: ${project.h2.tcpPort} and web server at port: ${project.h2.webPort}");
-        Server.main("-tcp", "-web", "-tcpPort", "${project.h2.tcpPort}", "-webPort", "${project.h2.webPort}")
+        Server.main("-tcp", "-tcpAllowOthers", "-web", "-webAllowOthers", "-tcpPort", "${project.h2.tcpPort}", "-webPort", "${project.h2.webPort}")
         if(project.liquibase){
            liquibaseUpdate()
 	    }
