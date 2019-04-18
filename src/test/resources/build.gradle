@@ -1,0 +1,51 @@
+// When the plugin is not published to the public gradle plugin repo you will need to use buildscript classpath configuration
+// instead of "plugins" closure as in the commented out section below. 
+//buildscript {
+//    repositories {
+//        mavenLocal()
+//        mavenCentral()
+//        //If you have your own private repo then you can specify it like below
+//        /*
+//        maven {
+//            url "https://<my nexus repo host>/nexus/content/groups/gradle-plugins/"
+//        }
+//        */
+//    }
+//    dependencies {
+//        classpath files('<The path to the plugin project after you checked out>/build/libs/h2-liquibase-plugin-1.0.2.jar')
+//    }
+//}
+//apply plugin: 'edu.umich.med.michr.gradle.h2-liquibase-gradle-plugin'
+
+
+plugins {
+    id 'edu.umich.med.michr.gradle.h2-liquibase-gradle-plugin'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+dependencies {
+    liquibaseRuntime 'org.liquibase:liquibase-core:3.6.3'
+    liquibaseRuntime 'com.h2database:h2:1.4.199'
+    liquibaseRuntime 'org.liquibase:liquibase-groovy-dsl:2.0.3'
+}
+h2 {
+    tcpPort 9095
+    webPort 8085
+}
+liquibase {
+    activities {
+        main {
+            changeLogFile 'db.changelog.xml'
+            url 'jdbc:h2:tcp://localhost:9095/mem:umhr;MODE=Oracle;TRACE_LEVEL_FILE=3;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE'
+            driver 'org.h2.Driver'
+            username 'umhr'
+            password 'umhr'
+            contexts 'schema,schema_staging,seed_data,dev_data'
+            defaultSchemaName 'PUBLIC'
+            logLevel 'info'
+        }
+    }
+}

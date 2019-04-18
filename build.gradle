@@ -10,7 +10,7 @@ A plugin to start/stop h2 database created/populated by liquibase changesets as 
 Useful for running applications that need a relational database during development.
 """
 group = 'edu.umich.med.michr.gradle'
-version = '1.0.0-SNAPSHOT'
+version = '1.0.2-SNAPSHOT'
 
 repositories {
 	mavenLocal()	
@@ -18,14 +18,13 @@ repositories {
 }
 
 dependencies {
-	//we could not use compileOnly here because with gradle 3.4.1 the unit tests failed ofr both h2 and liquibase plugin
-    compile "org.liquibase:liquibase-gradle-plugin:$liquibaseVersion"
-    compile "com.h2database:h2:$h2Version" //we could not use compileOnly here because with gradle 3.4.1 the unit tests failed
-    testCompile 'junit:junit:4.12'
+    compile "org.liquibase:liquibase-gradle-plugin:$liquibaseGradlePluginVersion"
+    compile "com.h2database:h2:$h2Version"
+	testCompile 'junit:junit:4.12'
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '3.4.1'
+wrapper() {
+    gradleVersion = '5.3.1'
 }
 
 tasks.withType(Test) {
@@ -58,12 +57,12 @@ tasks.withType(Test) {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+	archiveClassifier  = 'sources'
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+	archiveClassifier  = 'javadoc'
     from javadoc.destinationDir
 }
 
@@ -134,6 +133,12 @@ def deployer = uploadArchives.repositories.mavenDeployer
 				organization = 'Michigan Institute of Clinical and Health Research at the University of Michigan'
 				organizationUrl = 'https://www.michr.umich.edu/'
 			}
+			developer{
+				name = 'Vijay Danda'
+				email = 'vidanda@umich.edu'
+				organization = 'Michigan Institute of Clinical and Health Research at the University of Michigan'
+				organizationUrl = 'https://www.michr.umich.edu/'
+			}
 		}
 		scm{
 			connection 'scm:git:git://github.com:michr-cri/h2-liquibase-gradle-plugin.git'
@@ -144,13 +149,7 @@ def deployer = uploadArchives.repositories.mavenDeployer
 	}
 }
 
-task writeNewPom  {
-	doLast{
-		deployer.pom.writeTo("$buildDir/libs/${project.name}-${version}.pom")
-	}
-}
-
 build.doLast {
-	writeNewPom.execute()
+	deployer.pom.writeTo("$buildDir/libs/${project.name}-${version}.pom")
 }
 //PUBLISH RELATED CONFIG ENDS

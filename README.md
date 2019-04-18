@@ -1,12 +1,12 @@
 # Gradle H2-Liquibase Plugin
 
-This plugin lests you start an [H2 database](http://www.h2database.com) during gradle build cycle and then run [Liquibase](http://www.liquibase.org/) changesets on it to create schema and deve data.
+This plugin lets you start an [H2 database](http://www.h2database.com) during gradle build cycle and then run [Liquibase](http://www.liquibase.org/) changesets on it to create schema and deve data.
 
 Inspired by [James Carr](https://github.com/jamescarr)'s elegant and simple [h2-gradle-plugin](https://github.com/jamescarr/h2-gradle-plugin)
 
 ## Use Case
 
-Need to run a web application that needs a relational database. The database migrations are already managed by liquibase. Use this plugin to start h2 in the background then run your changesets then bring you application up pointing to the embedded h2 database running on the background.
+Need to run a web application that needs a relational database. The database migrations are already managed by liquibase. Use this plugin to start h2 in the background followed by getting your changesets run. Then you can start your application pointing to the embedded h2 database running on the background.
 
 ## Plugin Configuration
 
